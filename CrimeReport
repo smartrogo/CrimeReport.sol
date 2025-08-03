@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract CrimeReport {
+    // Struct to represent a crime report
+    struct Report {
+        uint256 id;
+        string location;           // e.g., "40.7128,-74.0060"
+        string description;
+        uint256 timestamp;
+        address reporter;          // Can be zero address for anonymity
+        bool isVerified;           // Optional: for future use
+    }
+
+    // State variables
+    Report[] public reports;
+    uint256 public reportCount;
+    mapping(uint256 => bool) public isReportExists;
+
+    // Events
+    event ReportSubmitted(
+        uint256 id,
+        string location,
+        string description,
+        uint256 timestamp,
+        address reporter
+    );
+
+    // Only allow non-empty strings
+    modifier nonEmptyString(string memory str) {
+        require(bytes(str).length > 0, "String cannot be empty");
+        _;
+    }
+
+    // Submit a new crime report
+    function submitReport(
+        string memory _location,
+        string memory _description
+    ) public nonEmptyString(_location) nonEmptyString(_description) {
+        // Increment report count
+        reportCount++;
+
+        // Create new report
+        Report memory newReport = Report({
+            id: reportCount,
+            location: _location,
+            description: _description,
+            timestamp: block.timestamp,
+            reporter: msg.sender,
+            isVerified: false
+        });
+
+        // Store the report
+        reports.push(newReport);
+        isReportExists[reportCount] = true;
+
+        // Emit event
+        emit ReportSubmitted(
+            reportCount,
+            _location,
+            _description,
+            block.timestamp,
+            msg.sender
+        );
+    }
+
+    // Get total number of reports
+    function getReportCount() public view returns (uint256) {
+        return reportCount;
+    }
+
+    // Get a specific report by index (0-indexed in array, but id is 1-indexed)
+    function getReport(uint256 _index) public view returns (
+        uint256 id,
+        string memory location,
+        string memory description,
+        uint256 timestamp,
+        address reporter,
+        bool isVerified
+    ) {
+        require(_index < reports.length, "Index out of bounds");
+        Report memory r = reports[_index];
+        return (
+            r.id,
+            r.location,
+            r.description,
+            r.timestamp,
+            r.reporter,
+            r.isVerified
+        );
+    }
+}
